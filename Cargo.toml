@@ -1,0 +1,19 @@
+[package]
+name = "odata-params"
+version = "0.1.0"
+authors = ["Jenifer Champagne <jen@iferc.ca>"]
+edition = "2021"
+description = """
+OData v4 query parameters parsers for handling paginated requests.
+"""
+repository = "https://github.com/JenChampagne/odata-params"
+keywords = ["odata", "params", "parse", "pagination", "filters"]
+license = "MIT OR Apache-2.0"
+readme = "./README.md"
+exclude = [".github", "examples"]
+
+[dependencies]
+bigdecimal = "0.4.5"
+chrono = "0.4.38"
+chrono-tz = "0.9.0"
+peg = "0.8.3"
