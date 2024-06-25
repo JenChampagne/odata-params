@@ -6,6 +6,7 @@ pub use odata_filter::parse_str;
 pub enum Expr {
     Or(Box<Expr>, Box<Expr>),
     And(Box<Expr>, Box<Expr>),
+    Not(Box<Expr>),
     Identifier(String),
     Value(Value),
 }
@@ -26,7 +27,8 @@ peg::parser! {
             = filter()
 
         rule filter() -> Expr
-            = l:any_expr() _ "or" _ r:filter() { Expr::Or(Box::new(l), Box::new(r)) }
+            = "not" _ e:filter() { Expr::Not(Box::new(e)) }
+            / l:any_expr() _ "or" _ r:filter() { Expr::Or(Box::new(l), Box::new(r)) }
             / l:any_expr() _ "and" _ r:filter() { Expr::And(Box::new(l), Box::new(r)) }
             / any_expr()
 
