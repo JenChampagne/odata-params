@@ -8,6 +8,7 @@ pub enum Expr {
     Or(Box<Expr>, Box<Expr>),
     And(Box<Expr>, Box<Expr>),
     Compare(Box<Expr>, CompareOperator, Box<Expr>),
+    In(Box<Expr>, Vec<Expr>),
     Not(Box<Expr>),
     Function(String, Vec<Expr>),
     Identifier(String),
@@ -57,6 +58,7 @@ peg::parser! {
 
         rule comparison_expr() -> Expr
             = l:value_expr() _ op:comparison_op() _ r:value_expr() { Expr::Compare(Box::new(l), op, Box::new(r)) }
+            / l:value_expr() _ "in" _ "(" _ r:filter_list() _ ")" { Expr::In(Box::new(l), r) }
 
         rule comparison_op() -> CompareOperator
             = "eq" { CompareOperator::Equal }
