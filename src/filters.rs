@@ -4,6 +4,7 @@ pub use odata_filter::parse_str;
 pub enum Expr {
     Or(Box<Expr>, Box<Expr>),
     And(Box<Expr>, Box<Expr>),
+    Identifier(String),
     Value(Value),
 }
 
@@ -31,6 +32,10 @@ peg::parser! {
 
         rule value_expr() -> Expr
             = v:value() { Expr::Value(v) }
+            / i:identifier() { Expr::Identifier(i) }
+
+        rule identifier() -> String
+            = s:$(['a'..='z'|'A'..='Z'|'_']['a'..='z'|'A'..='Z'|'_'|'0'..='9']+) { s.to_string() }
 
         rule value() -> Value
             = string_value()
