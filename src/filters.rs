@@ -1,4 +1,6 @@
 use bigdecimal::BigDecimal;
+use chrono::TimeZone;
+use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, Utc};
 use std::str::FromStr;
 
 pub use odata_filter::parse_str;
@@ -30,6 +32,9 @@ pub enum Value {
     Null,
     Bool(bool),
     Number(BigDecimal),
+    DateTime(DateTime<Utc>),
+    Date(NaiveDate),
+    Time(NaiveTime),
     String(String),
 }
 
@@ -76,6 +81,9 @@ peg::parser! {
 
         rule value() -> Value
             = string_value()
+            / datetime_value()
+            / date_value()
+            / time_value()
             / number_value()
             / bool_value()
             / null_value()
@@ -86,6 +94,34 @@ peg::parser! {
 
         rule number_value() -> Value
             = n:$(['0'..='9']+ ("." ['0'..='9']*)?) { Value::Number(BigDecimal::from_str(n).unwrap()) }
+
+        rule time() -> NaiveTime
+            = t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M:%S").unwrap() }
+            / t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M").unwrap() }
+
+        rule time_value() -> Value
+            = t:time() { Value::Time(t) }
+
+        rule date() -> NaiveDate
+            = d:$($(['0'..='9']*<4>) "-" $(['0'..='9']*<2>) "-" $(['0'..='9']*<2>)) { NaiveDate::parse_from_str(d, "%Y-%m-%d").unwrap() }
+
+        rule date_value() -> Value
+            = d:date() { Value::Date(d) }
+
+        rule timezone_name() -> chrono_tz::Tz
+            = z:$(['a'..='z'|'A'..='Z'|'-'|'_'|'/'|'+']['a'..='z'|'A'..='Z'|'-'|'_'|'/'|'+'|'0'..='9']+) { z.parse::<chrono_tz::Tz>().unwrap() }
+
+        rule timezone_offset() -> FixedOffset
+            = "Z" { "+0000".parse().unwrap() }
+            / z:$($(['-'|'+']) $(['0'..='9']*<2>) ":"? $(['0'..='9']*<2>)) { z.parse().unwrap() }
+            / z:$($(['-'|'+']) $(['0'..='9']*<2>)) { format!("{z}00").parse().unwrap() }
+
+        rule datetime() -> DateTime<Utc>
+            = d:date() "T" t:time() z:timezone_offset() { d.and_time(t).and_local_timezone(z).unwrap().to_utc() }
+            / d:date() "T" t:time() z:timezone_name() { d.and_time(t).and_local_timezone(z).unwrap().to_utc() }
+
+        rule datetime_value() -> Value
+            = dt:datetime() { Value::DateTime(dt) }
 
         rule string_value() -> Value
             = "'" s:$([^'\'']*) "'" { Value::String(s.to_string()) }
