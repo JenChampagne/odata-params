@@ -32,6 +32,7 @@ peg::parser! {
 
         rule any_expr() -> Expr
             = value_expr()
+            / "(" _ e:filter() _ ")" { e }
 
         rule value_expr() -> Expr
             = v:value() { Expr::Value(v) }
