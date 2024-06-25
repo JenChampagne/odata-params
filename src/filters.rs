@@ -7,6 +7,7 @@ pub enum Expr {
     Or(Box<Expr>, Box<Expr>),
     And(Box<Expr>, Box<Expr>),
     Not(Box<Expr>),
+    Function(String, Vec<Expr>),
     Identifier(String),
     Value(Value),
 }
@@ -37,8 +38,12 @@ peg::parser! {
             / "(" _ e:filter() _ ")" { e }
 
         rule value_expr() -> Expr
-            = v:value() { Expr::Value(v) }
+            = function_call()
+            / v:value() { Expr::Value(v) }
             / i:identifier() { Expr::Identifier(i) }
+
+        rule function_call() -> Expr
+            = fname:identifier() _ "(" _ args:filter_list() _ ")" { Expr::Function(fname, args) }
 
         rule identifier() -> String
             = s:$(['a'..='z'|'A'..='Z'|'_']['a'..='z'|'A'..='Z'|'_'|'0'..='9']+) { s.to_string() }
@@ -64,6 +69,9 @@ peg::parser! {
 
         rule value_list() -> Vec<Expr>
             = v:value_expr() ** ( _ "," _ ) { v }
+
+        rule filter_list() -> Vec<Expr>
+            = v:filter() ** ( _ "," _ ) { v }
 
         rule _()
             = [' '|'\t'|'\n'|'\r']*
