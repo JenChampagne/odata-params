@@ -1,3 +1,5 @@
+use bigdecimal::BigDecimal;
+
 pub use odata_filter::parse_str;
 
 #[derive(Debug)]
@@ -12,6 +14,7 @@ pub enum Expr {
 pub enum Value {
     Null,
     Bool(bool),
+    Number(BigDecimal),
     String(String),
 }
 
@@ -39,12 +42,16 @@ peg::parser! {
 
         rule value() -> Value
             = string_value()
+            / number_value()
             / bool_value()
             / null_value()
 
         rule bool_value() -> Value
             = ['t'|'T']['r'|'R']['u'|'U']['e'|'E'] { Value::Bool(true) }
             / ['f'|'F']['a'|'A']['l'|'L']['s'|'S']['e'|'E'] { Value::Bool(false) }
+
+        rule number_value() -> Value
+            = n:$(['0'..='9']+ ("." ['0'..='9']*)?) { Value::Number(BigDecimal::from_str(n).unwrap()) }
 
         rule string_value() -> Value
             = "'" s:$([^'\'']*) "'" { Value::String(s.to_string()) }
