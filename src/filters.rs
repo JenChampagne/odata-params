@@ -1,11 +1,10 @@
 use bigdecimal::BigDecimal;
-use chrono::TimeZone;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, Utc};
 use std::str::FromStr;
 
 pub use odata_filter::parse_str;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
     Or(Box<Expr>, Box<Expr>),
     And(Box<Expr>, Box<Expr>),
@@ -17,7 +16,7 @@ pub enum Expr {
     Value(Value),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum CompareOperator {
     Equal,
     NotEqual,
@@ -27,7 +26,7 @@ pub enum CompareOperator {
     LessOrEqual,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum Value {
     Null,
     Bool(bool),
