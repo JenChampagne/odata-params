@@ -9,7 +9,7 @@ pub fn parse_str(query: impl AsRef<str>) -> Result<Expr, Error> {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Error {
     Parsing,
     ParsingNumber,
@@ -27,7 +27,7 @@ impl std::fmt::Display for Error {
     }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Expr {
     Or(Box<Expr>, Box<Expr>),
     And(Box<Expr>, Box<Expr>),
@@ -39,7 +39,7 @@ pub enum Expr {
     Value(Value),
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CompareOperator {
     Equal,
     NotEqual,
@@ -49,7 +49,7 @@ pub enum CompareOperator {
     LessOrEqual,
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Value {
     Null,
     Bool(bool),
@@ -58,6 +58,12 @@ pub enum Value {
     Date(NaiveDate),
     Time(NaiveTime),
     String(String),
+}
+
+enum AfterValueExpr {
+    Compare(CompareOperator, Box<Expr>),
+    In(Vec<Expr>),
+    End,
 }
 
 peg::parser! {
@@ -74,18 +80,22 @@ peg::parser! {
             / any_expr()
 
         rule any_expr() -> Result<Expr, Error>
-            = comparison_expr()
-            / value_expr()
-            / "(" _ e:filter() _ ")" { e }
+            = "(" _ e:filter() _ ")" { e }
+            / l:value_expr() _ r:after_value_expr() { Ok(match r? {
+                AfterValueExpr::Compare(op, r) => Expr::Compare(Box::new(l?), op, r),
+                AfterValueExpr::In(r) => Expr::In(Box::new(l?), r),
+                AfterValueExpr::End => l?,
+            }) }
+
+        rule after_value_expr() -> Result<AfterValueExpr, Error>
+            = op:comparison_op() _ r:value_expr() { Ok(AfterValueExpr::Compare(op, Box::new(r?))) }
+            / "in" _ "(" _ r:filter_list() _ ")" { Ok(AfterValueExpr::In(r?)) }
+            / { Ok(AfterValueExpr::End) }
 
         rule value_expr() -> Result<Expr, Error>
             = function_call()
             / v:value() { Ok(Expr::Value(v?)) }
             / i:identifier() { Ok(Expr::Identifier(i)) }
-
-        rule comparison_expr() -> Result<Expr, Error>
-            = l:value_expr() _ op:comparison_op() _ r:value_expr() { Ok(Expr::Compare(Box::new(l?), op, Box::new(r?))) }
-            / l:value_expr() _ "in" _ "(" _ r:filter_list() _ ")" { Ok(Expr::In(Box::new(l?), r?)) }
 
         rule comparison_op() -> CompareOperator
             = "eq" { CompareOperator::Equal }
