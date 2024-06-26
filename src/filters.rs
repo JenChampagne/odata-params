@@ -15,6 +15,8 @@ use std::str::FromStr;
 /// # Examples
 ///
 /// ```
+/// use odata_params::filters::parse_str;
+///
 /// let filter = "name eq 'John' and isActive eq true";
 /// let result = parse_str(filter).expect("valid filter tree");
 /// ```

@@ -52,7 +52,7 @@ odata-params = "0.1.0"
 Here is an example of how to parse a simple filter expression:
 
 ```rust
-use odata_params::parse_str;
+use odata_params::filters::parse_str;
 
 fn main() {
     let filter = "name eq 'John' and isActive eq true";
@@ -67,6 +67,8 @@ fn main() {
 #### Logical Operators
 
 ```rust
+use odata_params::filters::parse_str;
+
 let filter = "name eq 'John' or isActive eq true";
 let result = parse_str(filter).expect("valid filter tree");
 
@@ -76,6 +78,8 @@ let result = parse_str(filter).expect("valid filter tree");
 #### Comparison Operators
 
 ```rust
+use odata_params::filters::parse_str;
+
 let filter = "price lt 99.99";
 let result = parse_str(filter).expect("valid filter tree");
 
@@ -85,6 +89,8 @@ let result = parse_str(filter).expect("valid filter tree");
 #### Function Calls
 
 ```rust
+use odata_params::filters::parse_str;
+
 let filter = "endswith(name, 'Smith')";
 let result = parse_str(filter).expect("valid filter tree");
 
@@ -96,6 +102,8 @@ let result = parse_str(filter).expect("valid filter tree");
 #### Nested Grouping
 
 ```rust
+use odata_params::filters::parse_str;
+
 let filter = "((name eq 'John' and isActive eq true) or (age gt 30 and age lt 50))";
 let result = parse_str(filter).expect("valid filter tree");
 
@@ -105,6 +113,8 @@ let result = parse_str(filter).expect("valid filter tree");
 #### Functions with Comparisons
 
 ```rust
+use odata_params::filters::parse_str;
+
 let filter = "concat(concat(city, ', '), country) eq 'Berlin, Germany'";
 let result = parse_str(filter).expect("valid filter tree");
 
