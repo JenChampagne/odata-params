@@ -2,7 +2,30 @@ use bigdecimal::BigDecimal;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, Utc};
 use std::str::FromStr;
 
-pub use odata_filter::parse_str;
+pub fn parse_str(query: impl AsRef<str>) -> Result<Expr, Error> {
+    match odata_filter::parse_str(query.as_ref()) {
+        Ok(expr) => expr,
+        Err(_error) => Err(Error::Parsing),
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum Error {
+    Parsing,
+    ParsingNumber,
+    ParsingDate,
+    ParsingTime,
+    ParsingDateTime,
+    ParsingTimeZone,
+    ParsingTimeZoneNamed,
+}
+
+impl std::error::Error for Error {}
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{self:?}")
+    }
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Expr {
@@ -39,30 +62,30 @@ pub enum Value {
 
 peg::parser! {
     grammar odata_filter() for str {
-        use super::{Expr, CompareOperator, Value};
+        use super::{Expr, CompareOperator, Value, Error};
 
-        pub rule parse_str() -> Expr
+        pub(super) rule parse_str() -> Result<Expr, Error>
             = filter()
 
-        rule filter() -> Expr
-            = "not" _ e:filter() { Expr::Not(Box::new(e)) }
-            / l:any_expr() _ "or" _ r:filter() { Expr::Or(Box::new(l), Box::new(r)) }
-            / l:any_expr() _ "and" _ r:filter() { Expr::And(Box::new(l), Box::new(r)) }
+        rule filter() -> Result<Expr, Error>
+            = "not" _ e:filter() { Ok(Expr::Not(Box::new(e?))) }
+            / l:any_expr() _ "or" _ r:filter() { Ok(Expr::Or(Box::new(l?), Box::new(r?))) }
+            / l:any_expr() _ "and" _ r:filter() { Ok(Expr::And(Box::new(l?), Box::new(r?))) }
             / any_expr()
 
-        rule any_expr() -> Expr
+        rule any_expr() -> Result<Expr, Error>
             = comparison_expr()
             / value_expr()
             / "(" _ e:filter() _ ")" { e }
 
-        rule value_expr() -> Expr
+        rule value_expr() -> Result<Expr, Error>
             = function_call()
-            / v:value() { Expr::Value(v) }
-            / i:identifier() { Expr::Identifier(i) }
+            / v:value() { Ok(Expr::Value(v?)) }
+            / i:identifier() { Ok(Expr::Identifier(i)) }
 
-        rule comparison_expr() -> Expr
-            = l:value_expr() _ op:comparison_op() _ r:value_expr() { Expr::Compare(Box::new(l), op, Box::new(r)) }
-            / l:value_expr() _ "in" _ "(" _ r:filter_list() _ ")" { Expr::In(Box::new(l), r) }
+        rule comparison_expr() -> Result<Expr, Error>
+            = l:value_expr() _ op:comparison_op() _ r:value_expr() { Ok(Expr::Compare(Box::new(l?), op, Box::new(r?))) }
+            / l:value_expr() _ "in" _ "(" _ r:filter_list() _ ")" { Ok(Expr::In(Box::new(l?), r?)) }
 
         rule comparison_op() -> CompareOperator
             = "eq" { CompareOperator::Equal }
@@ -72,55 +95,55 @@ peg::parser! {
             / "lt" { CompareOperator::LessThan }
             / "le" { CompareOperator::LessOrEqual }
 
-        rule function_call() -> Expr
-            = fname:identifier() _ "(" _ args:filter_list() _ ")" { Expr::Function(fname, args) }
+        rule function_call() -> Result<Expr, Error>
+            = f:identifier() _ "(" _ l:filter_list() _ ")" { Ok(Expr::Function(f, l?)) }
 
         rule identifier() -> String
             = s:$(['a'..='z'|'A'..='Z'|'_']['a'..='z'|'A'..='Z'|'_'|'0'..='9']+) { s.to_string() }
 
-        rule value() -> Value
-            = string_value()
+        rule value() -> Result<Value, Error>
+            = v:string_value() { Ok(v) }
             / datetime_value()
             / date_value()
             / time_value()
             / number_value()
-            / bool_value()
-            / null_value()
+            / v:bool_value() { Ok(v) }
+            / v:null_value() { Ok(v) }
 
         rule bool_value() -> Value
             = ['t'|'T']['r'|'R']['u'|'U']['e'|'E'] { Value::Bool(true) }
             / ['f'|'F']['a'|'A']['l'|'L']['s'|'S']['e'|'E'] { Value::Bool(false) }
 
-        rule number_value() -> Value
-            = n:$(['0'..='9']+ ("." ['0'..='9']*)?) { Value::Number(BigDecimal::from_str(n).unwrap()) }
+        rule number_value() -> Result<Value, Error>
+            = n:$(['0'..='9']+ ("." ['0'..='9']*)?) { Ok(Value::Number(BigDecimal::from_str(n).map_err(|_| Error::ParsingNumber)?)) }
 
-        rule time() -> NaiveTime
-            = t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M:%S").unwrap() }
-            / t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M").unwrap() }
+        rule time() -> Result<NaiveTime, Error>
+            = t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M:%S").map_err(|_| Error::ParsingTime) }
+            / t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M").map_err(|_| Error::ParsingTime) }
 
-        rule time_value() -> Value
-            = t:time() { Value::Time(t) }
+        rule time_value() -> Result<Value, Error>
+            = t:time() { Ok(Value::Time(t?)) }
 
-        rule date() -> NaiveDate
-            = d:$($(['0'..='9']*<4>) "-" $(['0'..='9']*<2>) "-" $(['0'..='9']*<2>)) { NaiveDate::parse_from_str(d, "%Y-%m-%d").unwrap() }
+        rule date() -> Result<NaiveDate, Error>
+            = d:$($(['0'..='9']*<4>) "-" $(['0'..='9']*<2>) "-" $(['0'..='9']*<2>)) { NaiveDate::parse_from_str(d, "%Y-%m-%d").map_err(|_| Error::ParsingDate) }
 
-        rule date_value() -> Value
-            = d:date() { Value::Date(d) }
+        rule date_value() -> Result<Value, Error>
+            = d:date() { Ok(Value::Date(d?)) }
 
-        rule timezone_name() -> chrono_tz::Tz
-            = z:$(['a'..='z'|'A'..='Z'|'-'|'_'|'/'|'+']['a'..='z'|'A'..='Z'|'-'|'_'|'/'|'+'|'0'..='9']+) { z.parse::<chrono_tz::Tz>().unwrap() }
+        rule timezone_name() -> Result<chrono_tz::Tz, Error>
+            = z:$(['a'..='z'|'A'..='Z'|'-'|'_'|'/'|'+']['a'..='z'|'A'..='Z'|'-'|'_'|'/'|'+'|'0'..='9']+) { z.parse::<chrono_tz::Tz>().map_err(|_| Error::ParsingTimeZoneNamed) }
 
-        rule timezone_offset() -> FixedOffset
-            = "Z" { "+0000".parse().unwrap() }
-            / z:$($(['-'|'+']) $(['0'..='9']*<2>) ":"? $(['0'..='9']*<2>)) { z.parse().unwrap() }
-            / z:$($(['-'|'+']) $(['0'..='9']*<2>)) { format!("{z}00").parse().unwrap() }
+        rule timezone_offset() -> Result<FixedOffset, Error>
+            = "Z" { "+0000".parse().map_err(|_| Error::ParsingTimeZone) }
+            / z:$($(['-'|'+']) $(['0'..='9']*<2>) ":"? $(['0'..='9']*<2>)) { z.parse().map_err(|_| Error::ParsingTimeZone) }
+            / z:$($(['-'|'+']) $(['0'..='9']*<2>)) { format!("{z}00").parse().map_err(|_| Error::ParsingTimeZone) }
 
-        rule datetime() -> DateTime<Utc>
-            = d:date() "T" t:time() z:timezone_offset() { d.and_time(t).and_local_timezone(z).unwrap().to_utc() }
-            / d:date() "T" t:time() z:timezone_name() { d.and_time(t).and_local_timezone(z).unwrap().to_utc() }
+        rule datetime() -> Result<DateTime<Utc>, Error>
+            = d:date() "T" t:time() z:timezone_offset() { Ok(d?.and_time(t?).and_local_timezone(z?).earliest().ok_or(Error::ParsingDateTime)?.to_utc()) }
+            / d:date() "T" t:time() z:timezone_name() { Ok(d?.and_time(t?).and_local_timezone(z?).earliest().ok_or(Error::ParsingDateTime)?.to_utc()) }
 
-        rule datetime_value() -> Value
-            = dt:datetime() { Value::DateTime(dt) }
+        rule datetime_value() -> Result<Value, Error>
+            = dt:datetime() { Ok(Value::DateTime(dt?)) }
 
         rule string_value() -> Value
             = "'" s:$([^'\'']*) "'" { Value::String(s.to_string()) }
@@ -128,11 +151,11 @@ peg::parser! {
         rule null_value() -> Value
             = ['n'|'N']['u'|'U']['l'|'L']['l'|'L'] { Value::Null }
 
-        rule value_list() -> Vec<Expr>
-            = v:value_expr() ** ( _ "," _ ) { v }
+        rule value_list() -> Result<Vec<Expr>, Error>
+            = v:value_expr() ** ( _ "," _ ) { v.into_iter().collect() }
 
-        rule filter_list() -> Vec<Expr>
-            = v:filter() ** ( _ "," _ ) { v }
+        rule filter_list() -> Result<Vec<Expr>, Error>
+            = v:filter() ** ( _ "," _ ) { v.into_iter().collect() }
 
         rule _()
             = [' '|'\t'|'\n'|'\r']*
