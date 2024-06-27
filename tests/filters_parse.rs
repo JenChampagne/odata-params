@@ -1,4 +1,4 @@
-use bigdecimal::BigDecimal;
+use odata_params::bigdecimal::BigDecimal;
 use odata_params::filters::CompareOperator::*;
 use odata_params::filters::{parse_str, Expr, Value};
 use std::str::FromStr;
