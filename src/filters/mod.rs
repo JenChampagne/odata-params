@@ -1,9 +1,11 @@
 mod parse;
+mod to_query_string;
 
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 
 pub use parse::parse_str;
+pub use to_query_string::{to_query_string, write_query_string};
 
 /// Represents various errors that can occur during parsing.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -86,6 +88,20 @@ pub enum CompareOperator {
 
     /// Less than or equal to.
     LessOrEqual,
+}
+
+/// Converts a `CompareOperator` to its string representation.
+impl std::fmt::Display for CompareOperator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CompareOperator::Equal => write!(f, "eq"),
+            CompareOperator::NotEqual => write!(f, "ne"),
+            CompareOperator::GreaterThan => write!(f, "gt"),
+            CompareOperator::GreaterOrEqual => write!(f, "ge"),
+            CompareOperator::LessThan => write!(f, "lt"),
+            CompareOperator::LessOrEqual => write!(f, "le"),
+        }
+    }
 }
 
 /// Represents the various value types.
