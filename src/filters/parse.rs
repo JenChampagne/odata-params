@@ -22,7 +22,7 @@ use std::str::FromStr;
 /// let result = parse_str(filter).expect("valid filter tree");
 /// ```
 pub fn parse_str(query: impl AsRef<str>) -> Result<Expr, Error> {
-    match odata_filter::parse_str(query.as_ref()) {
+    match odata_filter::parse_str(query.as_ref().trim()) {
         Ok(expr) => expr,
         Err(_error) => Err(Error::Parsing),
     }
@@ -109,8 +109,13 @@ peg::parser! {
 
         /// Parses a time value in the format `HH:MM:SS` or `HH:MM`.
         rule time() -> Result<NaiveTime, Error>
-            = t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M:%S").map_err(|_| Error::ParsingTime) }
-            / t:$($(['0'..='9']*<2>) ":" $(['0'..='9']*<2>)) { NaiveTime::parse_from_str(t, "%H:%M").map_err(|_| Error::ParsingTime) }
+            = hm:$($(['0'..='9']*<1,2>) ":" $(['0'..='9']*<2>)) s:$(":" $(['0'..='9']*<2>))? ms:$("." $(['0'..='9']*<1,9>))? {
+                match (s, ms) {
+                    (Some(s), Some(ms)) => NaiveTime::parse_from_str(&format!("{hm}{s}{ms}"), "%H:%M:%S%.f"),
+                    (Some(s), None) => NaiveTime::parse_from_str(&format!("{hm}{s}"), "%H:%M:%S"),
+                    (None, _) => NaiveTime::parse_from_str(hm, "%H:%M"),
+                }.map_err(|_| Error::ParsingTime)
+            }
 
         /// Parses a time value.
         rule time_value() -> Result<Value, Error>
@@ -157,9 +162,8 @@ peg::parser! {
             / "r" { Ok('\r') }
             / "t" { Ok('\t') }
             / r"\" { Ok('\\') }
-            / "u" sequence:$(['0'..='9' | 'a'..='f' | 'A'..='F']+) {
-                if sequence.len() > 8 { Err(Error::ParsingUnicodeCodePoint) }
-                else { u32::from_str_radix(sequence, 16).ok().and_then(char::from_u32).ok_or(Error::ParsingUnicodeCodePoint) }
+            / "u" sequence:$(['0'..='9' | 'a'..='f' | 'A'..='F']*<1,8>) {
+                u32::from_str_radix(sequence, 16).ok().and_then(char::from_u32).ok_or(Error::ParsingUnicodeCodePoint)
             }
 
         /// Parses a null value.
