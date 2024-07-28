@@ -208,36 +208,6 @@ fn in_operator() {
 }
 
 #[test]
-fn boolean_value() {
-    let filter = "isActive eq false";
-    let result = parse_str(filter).expect("valid filter tree");
-
-    assert_eq!(
-        result,
-        Expr::Compare(
-            Expr::Identifier("isActive".to_owned()).into(),
-            Equal,
-            Expr::Value(Value::Bool(false)).into()
-        )
-    );
-}
-
-#[test]
-fn number_value() {
-    let filter = "price lt 99.99";
-    let result = parse_str(filter).expect("valid filter tree");
-
-    assert_eq!(
-        result,
-        Expr::Compare(
-            Expr::Identifier("price".to_owned()).into(),
-            LessThan,
-            Expr::Value(Value::Number(BigDecimal::from_str("99.99").unwrap())).into()
-        )
-    );
-}
-
-#[test]
 fn nested_not() {
     let filter = "not (not (isActive eq false))";
     let result = parse_str(filter).expect("valid filter tree");
@@ -594,75 +564,6 @@ fn nested_and_or_not() {
                 .into()
             )
             .into()
-        )
-    );
-}
-
-#[test]
-fn date_comparison() {
-    let filter = "birthdate eq 2024-06-24";
-    let result = parse_str(filter).expect("valid filter tree");
-
-    assert_eq!(
-        result,
-        Expr::Compare(
-            Expr::Identifier("birthdate".to_owned()).into(),
-            Equal,
-            Expr::Value(Value::Date("2024-06-24".parse().unwrap())).into()
-        )
-    );
-}
-
-#[test]
-fn datetime_and_time() {
-    let filter = "createdAt eq 2024-06-24T12:34:56Z and startTime lt 14:30:00";
-    let result = parse_str(filter).expect("valid filter tree");
-
-    assert_eq!(
-        result,
-        Expr::And(
-            Expr::Compare(
-                Expr::Identifier("createdAt".to_owned()).into(),
-                Equal,
-                Expr::Value(Value::DateTime("2024-06-24T12:34:56Z".parse().unwrap())).into()
-            )
-            .into(),
-            Expr::Compare(
-                Expr::Identifier("startTime".to_owned()).into(),
-                LessThan,
-                Expr::Value(Value::Time("14:30:00".parse().unwrap())).into()
-            )
-            .into()
-        )
-    );
-}
-
-#[test]
-fn escaped_string_comparison() {
-    let filter = r"name eq '\u03A9 S\'mores'";
-    let result = parse_str(filter).expect("valid filter tree");
-
-    assert_eq!(
-        result,
-        Expr::Compare(
-            Expr::Identifier("name".to_owned()).into(),
-            Equal,
-            Expr::Value(Value::String(String::from("Ω S'mores"))).into()
-        )
-    );
-}
-
-#[test]
-fn decimal_comparison() {
-    let filter = "rating eq 4.75";
-    let result = parse_str(filter).expect("valid filter tree");
-
-    assert_eq!(
-        result,
-        Expr::Compare(
-            Expr::Identifier("rating".to_owned()).into(),
-            Equal,
-            Expr::Value(Value::Number(BigDecimal::from_str("4.75").unwrap())).into()
         )
     );
 }

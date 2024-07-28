@@ -62,7 +62,7 @@ Or run `cargo add odata-params`.
 Here is an example of how to parse a simple filter expression:
 
 ```rust
-use odata_params::filters::parse_str;
+use odata_params::filters::{parse_str, to_query_string};
 
 fn main() {
     // Convert a string query to Expr AST.
