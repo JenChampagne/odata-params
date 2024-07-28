@@ -2,6 +2,7 @@ use super::{CompareOperator, Error, Expr, Value};
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, FixedOffset, NaiveDate, NaiveTime, Utc};
 use std::str::FromStr;
+use uuid::Uuid;
 
 /// Parses an OData v4 `$filter` expression string into an `Expr` AST.
 ///
@@ -94,6 +95,7 @@ peg::parser! {
             / datetime_value()
             / date_value()
             / time_value()
+            / uuid_value()
             / number_value()
             / v:bool_value() { Ok(v) }
             / v:null_value() { Ok(v) }
@@ -106,6 +108,14 @@ peg::parser! {
         /// Parses a numeric value.
         rule number_value() -> Result<Value, Error>
             = n:$(['0'..='9']+ ("." ['0'..='9']*)?) { Ok(Value::Number(BigDecimal::from_str(n).map_err(|_| Error::ParsingNumber)?)) }
+
+        /// Parses a uuid value.
+        rule uuid_value() -> Result<Value, Error>
+            = id:$(hex()*<8> "-" hex()*<4> "-" hex()*<4> "-" hex()*<4> "-" hex()*<12> ) { Ok(Value::Uuid(Uuid::parse_str(id).map_err(|_| Error::ParsingUuid)?)) }
+
+        /// Parses a single hexadecimal digit.
+        rule hex() -> char
+            = ['0'..='9'|'a'..='f'|'A'..='F']
 
         /// Parses a time value in the format `HH:MM:SS` or `HH:MM`.
         rule time() -> Result<NaiveTime, Error>
@@ -162,7 +172,7 @@ peg::parser! {
             / "r" { Ok('\r') }
             / "t" { Ok('\t') }
             / r"\" { Ok('\\') }
-            / "u" sequence:$(['0'..='9' | 'a'..='f' | 'A'..='F']*<1,8>) {
+            / "u" sequence:$(hex()*<1,8>) {
                 u32::from_str_radix(sequence, 16).ok().and_then(char::from_u32).ok_or(Error::ParsingUnicodeCodePoint)
             }
 

@@ -29,10 +29,11 @@ The library supports the following data types in expressions:
 
 - **String**: Enclosed in single quotes `'example'`
 - **Number**: Integer and decimal numbers `123`, `45.67`
+- **UUID**: UUIDs `da820b39-5ad2-4441-b664-c902dbd377d8`
 - **Boolean**: `true`, `false`
-- **Date**: ISO 8601 format `YYYY-MM-DD`
-- **DateTime**: ISO 8601 format with time `YYYY-MM-DDTHH:MM:SSZ`
 - **Time**: ISO 8601 format `HH:MM:SS`
+- **Date**: ISO 8601 format `YYYY-MM-DD`
+- **DateTime**: ISO 8601 format with time zone `YYYY-MM-DDTHH:MM:SSZ`
 
 ## Testing
 

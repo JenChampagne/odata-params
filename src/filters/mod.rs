@@ -3,6 +3,7 @@ mod to_query_string;
 
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
+use uuid::Uuid;
 
 pub use parse::parse_str;
 pub use to_query_string::{to_query_string, write_query_string};
@@ -12,6 +13,9 @@ pub use to_query_string::{to_query_string, write_query_string};
 pub enum Error {
     /// Error during general parsing.
     Parsing,
+
+    /// Error parsing a uuid.
+    ParsingUuid,
 
     /// Error parsing a number.
     ParsingNumber,
@@ -118,6 +122,9 @@ pub enum Value {
 
     /// Numeric value.
     Number(BigDecimal),
+
+    /// Unique ID sometimes referred to as GUIDs.
+    Uuid(Uuid),
 
     /// Date and time with time zone value.
     DateTime(DateTime<Utc>),

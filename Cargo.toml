@@ -1,6 +1,6 @@
 [package]
 name = "odata-params"
-version = "0.2.2"
+version = "0.3.0"
 authors = ["Jenifer Champagne <jen@iferc.ca>"]
 edition = "2021"
 description = """
@@ -17,3 +17,4 @@ bigdecimal = "0.4"
 chrono = "0.4"
 chrono-tz = "0.9"
 peg = "0.8"
+uuid = "1.10"

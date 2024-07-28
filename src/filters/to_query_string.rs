@@ -161,6 +161,9 @@ fn write_value<W: Write>(writer: &mut W, value: &Value) -> fmt::Result {
         // Handle numeric values.
         Value::Number(n) => write!(writer, "{n}"),
 
+        // Handle UUID values.
+        Value::Uuid(id) => write!(writer, "{id}"),
+
         // Handle datetime values.
         Value::DateTime(dt) => write!(writer, "{}", dt.to_rfc3339_opts(Millis, true)),
 

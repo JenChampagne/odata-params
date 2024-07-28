@@ -46,6 +46,40 @@ fn boolean_value() {
 }
 
 #[test]
+fn uuid_value() {
+    let filter = [
+        "AuthorId eq d1fdd9d1-8c73-4eb9-a341-3505d4efad78",
+        "and PackageId ne C0BD12F1-9CAD-4081-977A-04B5AF7EDA0E",
+    ]
+    .join(" ");
+    let result = parse_str(filter).expect("valid filter tree");
+
+    assert_eq!(
+        result,
+        Expr::And(
+            Expr::Compare(
+                Expr::Identifier("AuthorId".to_owned()).into(),
+                Equal,
+                Expr::Value(Value::Uuid(uuid::uuid!(
+                    "d1fdd9d1-8c73-4eb9-a341-3505d4efad78"
+                )))
+                .into()
+            )
+            .into(),
+            Expr::Compare(
+                Expr::Identifier("PackageId".to_owned()).into(),
+                NotEqual,
+                Expr::Value(Value::Uuid(uuid::uuid!(
+                    "c0bd12f1-9cad-4081-977a-04b5af7eda0e"
+                )))
+                .into()
+            )
+            .into()
+        )
+    );
+}
+
+#[test]
 fn number_value() {
     let filter = "price lt 99.99 and code in (11, 27, 42)";
     let result = parse_str(filter).expect("valid filter tree");
