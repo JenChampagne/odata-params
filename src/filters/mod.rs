@@ -30,6 +30,9 @@ pub enum Error {
 
     /// Error parsing a named time zone.
     ParsingTimeZoneNamed,
+
+    /// Error parsing unicode code point escape sequence.
+    ParsingUnicodeCodePoint,
 }
 
 impl std::error::Error for Error {}

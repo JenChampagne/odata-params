@@ -90,7 +90,7 @@ peg::parser! {
 
         /// Parses a value, which can be a string, datetime, date, time, number, boolean, or null.
         rule value() -> Result<Value, Error>
-            = v:string_value() { Ok(v) }
+            = string_value()
             / datetime_value()
             / date_value()
             / time_value()
@@ -144,8 +144,23 @@ peg::parser! {
             = dt:datetime() { Ok(Value::DateTime(dt?)) }
 
         /// Parses a string value enclosed in single quotes.
-        rule string_value() -> Value
-            = "'" s:$([^'\'']*) "'" { Value::String(s.to_string()) }
+        rule string_value() -> Result<Value, Error>
+            = "'" s:quote_escaped_string_content()* "'" { Ok(Value::String(s.into_iter().collect::<Result<Vec<_>, _>>()?.into_iter().collect())) }
+
+        rule quote_escaped_string_content() -> Result<char, Error>
+            = r"\" e:escape_character() { e }
+            / c:[^'\''] { Ok(c) }
+
+        rule escape_character() -> Result<char, Error>
+            = "'" { Ok('\'') }
+            / "n" { Ok('\n') }
+            / "r" { Ok('\r') }
+            / "t" { Ok('\t') }
+            / r"\" { Ok('\\') }
+            / "u" sequence:$(['0'..='9' | 'a'..='f' | 'A'..='F']+) {
+                if sequence.len() > 8 { Err(Error::ParsingUnicodeCodePoint) }
+                else { u32::from_str_radix(sequence, 16).ok().and_then(char::from_u32).ok_or(Error::ParsingUnicodeCodePoint) }
+            }
 
         /// Parses a null value.
         rule null_value() -> Value

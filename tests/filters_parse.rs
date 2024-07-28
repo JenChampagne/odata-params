@@ -638,6 +638,21 @@ fn datetime_and_time() {
 }
 
 #[test]
+fn escaped_string_comparison() {
+    let filter = r"name eq '\u03A9 S\'mores'";
+    let result = parse_str(filter).expect("valid filter tree");
+
+    assert_eq!(
+        result,
+        Expr::Compare(
+            Expr::Identifier("name".to_owned()).into(),
+            Equal,
+            Expr::Value(Value::String(String::from("Ω S'mores"))).into()
+        )
+    );
+}
+
+#[test]
 fn decimal_comparison() {
     let filter = "rating eq 4.75";
     let result = parse_str(filter).expect("valid filter tree");
