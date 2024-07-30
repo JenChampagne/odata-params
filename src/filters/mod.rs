@@ -3,39 +3,54 @@ mod to_query_string;
 
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
+use thiserror::Error;
 use uuid::Uuid;
 
 pub use parse::parse_str;
 pub use to_query_string::{to_query_string, write_query_string};
 
+/// This alias is to make the rename to ParseError a non-breaking change.
+/// You should prefer using ParseError.
+#[deprecated = "Use ParseError instead."]
+pub use ParseError as Error;
+
 /// Represents various errors that can occur during parsing.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Error {
+#[derive(Clone, Debug, Error, PartialEq, Eq)]
+pub enum ParseError {
     /// Error during general parsing.
+    #[error("Error during general parsing.")]
     Parsing,
 
-    /// Error parsing a uuid.
+    /// Error parsing a UUID.
+    #[error("Error parsing a UUID.")]
     ParsingUuid,
 
     /// Error parsing a number.
+    #[error("Error parsing a number.")]
     ParsingNumber,
 
     /// Error parsing a date.
+    #[error("Error parsing a date.")]
     ParsingDate,
 
     /// Error parsing a time.
+    #[error("Error parsing a time.")]
     ParsingTime,
 
     /// Error parsing a datetime.
+    #[error("Error parsing a date and time.")]
     ParsingDateTime,
 
     /// Error parsing a time zone offset.
+    #[error("Error parsing a time zone offset.")]
     ParsingTimeZone,
 
     /// Error parsing a named time zone.
+    #[error("Error parsing a named time zone.")]
     ParsingTimeZoneNamed,
 
-    /// Error parsing unicode code point escape sequence.
+    /// Error parsing a Unicode code point escape sequence.
+    #[error("Error parsing a Unicode code point escape sequence.")]
     ParsingUnicodeCodePoint,
 }
 
@@ -56,14 +71,14 @@ pub enum Expr {
     /// Logical AND between two expressions.
     And(Box<Expr>, Box<Expr>),
 
+    /// Logical NOT to invert an expression.
+    Not(Box<Expr>),
+
     /// Comparison between two expressions.
     Compare(Box<Expr>, CompareOperator, Box<Expr>),
 
     /// In operator to check if a value is within a list of values.
     In(Box<Expr>, Vec<Expr>),
-
-    /// Logical NOT to invert an expression.
-    Not(Box<Expr>),
 
     /// Function call with a name and a list of arguments.
     Function(String, Vec<Expr>),

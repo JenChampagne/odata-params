@@ -4,15 +4,7 @@ use std::fmt::{self, Write};
 
 /// Converts an `Expr` AST to its corresponding OData `$filter` string representation.
 ///
-/// # Arguments
-///
-/// * `expr` - The expression to convert.
-///
-/// # Returns
-///
 /// A `Result` containing the resulting query string or a `fmt::Error`.
-///
-/// # Examples
 ///
 /// ```
 /// use odata_params::bigdecimal::BigDecimal;
@@ -35,13 +27,6 @@ pub fn to_query_string(expr: &Expr) -> Result<String, fmt::Error> {
 }
 
 /// Writes an `Expr` AST to a writer as its corresponding OData `$filter` string representation.
-///
-/// # Arguments
-///
-/// * `writer` - The writer to which the query string is written.
-/// * `expr` - The expression to write.
-///
-/// # Returns
 ///
 /// A `fmt::Result` indicating the success or failure of the write operation.
 pub fn write_query_string<W: Write>(writer: &mut W, expr: &Expr) -> fmt::Result {
@@ -141,13 +126,6 @@ fn write_string<W: Write>(writer: &mut W, expr: &Expr, recursive_call: bool) -> 
 }
 
 /// Writes a `Value` to a writer.
-///
-/// # Arguments
-///
-/// * `writer` - The writer to which the value is written.
-/// * `value` - The value to write.
-///
-/// # Returns
 ///
 /// A `fmt::Result` indicating the success or failure of the write operation.
 fn write_value<W: Write>(writer: &mut W, value: &Value) -> fmt::Result {
