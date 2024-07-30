@@ -1,6 +1,6 @@
 [package]
 name = "odata-params"
-version = "0.3.1"
+version = "0.4.0"
 authors = ["Jenifer Champagne <jen@iferc.ca>"]
 edition = "2021"
 description = """
