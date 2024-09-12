@@ -79,7 +79,7 @@ peg::parser! {
 
         /// Parses an identifier.
         rule identifier() -> String
-            = s:$(['a'..='z'|'A'..='Z'|'_']['a'..='z'|'A'..='Z'|'_'|'0'..='9']+) { s.to_string() }
+            = s:$(['a'..='z'|'A'..='Z'|'_']['a'..='z'|'A'..='Z'|'_'|'0'..='9']*(['.'|'/'] _ identifier())?) { s.to_string() }
 
         /// Parses a value, which can be a string, datetime, date, time, number, boolean, or null.
         rule value() -> Result<Value, ParseError>

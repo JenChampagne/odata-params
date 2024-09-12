@@ -606,3 +606,35 @@ fn multiple_nested_functions() {
         )
     );
 }
+
+#[test]
+fn identifier_nested_properties() {
+    let identifiers = vec![
+        "address/city",
+        "model.address",
+        "address/city/position/longitude",
+        "model.address/city",
+        "model.address.city",
+        "a/_"
+    ];
+
+    for identifier in identifiers {
+        assert_eq!(parse_str(identifier).expect("valid filter tree"), Expr::Identifier(identifier.to_owned()).into());
+    }
+}
+
+#[test]
+fn identifier_invalid_nested_properties() {
+    let identifiers = vec![
+        "address/city.1",
+        "model.address!1",
+        "address/city/position/longitude/",
+        "address/city/position/longitude+a",
+        "address/city/(position/longitude)",
+        "model.address."
+    ];
+    
+    for identifier in identifiers {
+        assert!(parse_str(identifier).is_err());
+    }
+}
