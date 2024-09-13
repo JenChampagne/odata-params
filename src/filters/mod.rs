@@ -4,6 +4,8 @@ mod validate;
 
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
+#[cfg(feature = "serde")]
+use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use thiserror::Error;
 use uuid::Uuid;
@@ -102,6 +104,7 @@ pub enum ValidationError {
 
 /// Represents the different types of expressions in the AST.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Expr {
     /// Logical OR between two expressions.
     Or(Box<Expr>, Box<Expr>),
@@ -130,6 +133,7 @@ pub enum Expr {
 
 /// Represents the various comparison operators.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum CompareOperator {
     /// Equal to.
     Equal,
@@ -166,6 +170,7 @@ impl std::fmt::Display for CompareOperator {
 
 /// Represents the various value types.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum Value {
     /// Null value.
     Null,
