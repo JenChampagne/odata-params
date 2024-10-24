@@ -12,10 +12,14 @@ license = "MIT OR Apache-2.0"
 readme = "./README.md"
 exclude = [".github", "examples"]
 
+[features]
+serde = [ "dep:serde", "bigdecimal/serde", "chrono/serde", "chrono-tz/serde", "uuid/serde" ]
+
 [dependencies]
 bigdecimal = "0.4"
 chrono = "0.4"
 chrono-tz = "0.9"
 peg = "0.8"
+serde = { version = "1.0.210", features = ["derive"], optional = true }
 thiserror = "1.0.63"
 uuid = "1.10"
